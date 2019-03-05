@@ -1,9 +1,7 @@
 package com.store.controller;
 
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import javax.validation.Valid;
@@ -24,7 +22,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.store.BookStoreApplication;
 import com.store.exception.BookNotFoundException;
 import com.store.model.Book;
 import com.store.model.Response;
