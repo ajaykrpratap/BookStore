@@ -1,5 +1,7 @@
 var express = require('express');
 var router = express.Router();
+var connection = require('../data_source/dataSource');
+
 
 const books = [
     { title: 'Harry Potter', id: 1 },
@@ -22,11 +24,46 @@ const superviseeList = [{
 }];
 const supervisee = ["Puneet", "Dipti", "Ajay"]
 router.get('/supervisee', (req, res) => {
-    res.send(supervisee);
+    connection.query("SELECT * FROM O3_Emp_Details", function (err, result, fields) {
+        if (err) throw err;
+        res.send(result);
+
+    });
 });
 
-router.get('/o3SuperviseeDetails', (req, res) => {
-    res.send(superviseeList);
+router.get('/o3SuperviseeDetails/:OracleId', (req, res) => {
+    console.log("----" + req.params.OracleId)
+    var id = parseInt(req.params.OracleId);
+    connection.query("SELECT * FROM O3_Details WHERE OracleId = ?", id, function (err, result, fields) {
+        res.send(result);
+
+    });
+});
+
+router.post("/save03detail/:OracleId", (req, res) => {
+    console.log("----" + req.body);
+    for (let val of req.body) {
+        var id = parseInt(req.params.OracleId);
+        console.log("-------is-"+id)
+        var isTrueSet = (val.O3Done === 'true');
+
+        var post  = {
+            OracleId: id,
+            O3WeekStartDate: new Date(val.O3WeekStartDate),
+            O3Done: isTrueSet,
+            Status:val.Status,
+            Comments: val.Comments,
+            DateDone:  new Date(val.DateDone)
+          };
+        connection.query("INSERT INTO O3_Details SET ? ", post, function (err, result) {
+            if (err){
+                console.log(err);
+                res.send("failure");
+            }
+            console.log("1 record inserted");
+        });
+    }
+    res.send("success");
 });
 
 module.exports = router;

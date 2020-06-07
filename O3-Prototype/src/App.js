@@ -13,13 +13,13 @@ class App extends React.Component {
 		super(props);
 		this.state = {
 			rows: [{
-				date: "",
-				meetingDone: "",
-				meetingDate: "",
-				comments: "",
-				status: "",
+				O3WeekStartDate: "",
+				O3Done: false,
+				DateDone: "",
+				Comments: "",
+				Status: "",
 			}],
-			supervisee: '',
+			OracleId: '',
 			existingDetails: [],
 			superviseeList: [],
 			response: null
@@ -40,32 +40,23 @@ class App extends React.Component {
 			})
 	}
 
-	getO3SuperviseeDetails() {
-		const response = axios.get('http://localhost:8080/api/o3SuperviseeDetails')
+	getO3SuperviseeDetails(OracleId) {
+		const response = axios.get('http://localhost:8080/api/o3SuperviseeDetails/'+OracleId)
 			.then(res => {
 				const response = res.data;
 				this.setState({ existingDetails: response });
-			})
-		// const existingData = {
-		// 	date: "06/10/2020",
-		// 	meetingDone: true,
-		// 	meetingDate: "06/10/2020",
-		// 	comments: "Testing",
-		// 	status: "Green",
-		// }
-		// let existingDetails = this.state.existingDetails;
-		// existingDetails.push(existingData);
-		// this.setState({ existingDetails })
+			});
 	}
+
 
 	addRow = () => {
 		let rows = this.state.rows;
 		rows.push({
-			date: "",
-			meetingDone: "",
-			meetingDate: "",
-			comments: "",
-			status: "",
+			O3WeekStartDate: "",
+			O3Done: false,
+			DateDone: "",
+			Comments: "",
+			Status: "",
 		});
 		this.setState({ rows });
 	}
@@ -80,9 +71,15 @@ class App extends React.Component {
 
 
 	submitValues = () => {
-		alert('An O3 was submitted: ' + JSON.stringify(this.state));
-		const response = axios.post('url', this.state);
-		this.setState({ response: response.data });
+		const OracleId =  this.state.OracleId;
+		const response = axios.post('http://localhost:8080/api/save03detail/'+OracleId, this.state.rows).then(res => {
+			this.getO3SuperviseeDetails(this.state.OracleId);
+			let existingDetails =  this.state.existingDetails;
+			existingDetails.concat(this.state.rows);
+			this.setState({ existingDetails });
+			
+		});
+
 	}
 
 
@@ -93,19 +90,28 @@ class App extends React.Component {
 		rows[i] = { ...rows[i], [name]: value };
 		this.setState({ rows });
 	}
+
+	handleCheckBoxChange(i, e){
+		const checked = e.target.checked;
+		const { name, value } = e.target;
+		let rows = [...this.state.rows];
+		rows[i] = { ...rows[i], [name]: checked };
+		this.setState({ rows });
+
+	}
 	setSupervisee = e => {
-		this.setState({ supervisee: e.target.value });
-		this.getO3SuperviseeDetails();
+		this.setState({ OracleId: e.target.value });
+		this.getO3SuperviseeDetails(e.target.value);
 	}
 
 	createUI() {
 		return this.state.rows.map((row, i) => <TableRow key={i}>
-			<TableCell><TextField type='date' name='date' value={row.date} onChange={this.handleChange.bind(this, i)} /></TableCell>
-			<TableCell><Checkbox color='primary' name='meetingDone' value={row.meetingDone} onChange={this.handleChange.bind(this, i)} /></TableCell>
-			<TableCell>	<TextField type='date' name='meetingDate' value={row.meetingDate} onChange={this.handleChange.bind(this, i)} /></TableCell>
-			<TableCell><TextareaAutosize name='comments' value={row.comments} onChange={this.handleChange.bind(this, i)} /></TableCell>
+			<TableCell><TextField type='date' name='O3WeekStartDate' value={row.O3WeekStartDate} onChange={this.handleChange.bind(this, i)} /></TableCell>
+			<TableCell><Checkbox  checked ={row.O3Done}   color='primary' name='O3Done' value={row.O3Done} onChange={this.handleCheckBoxChange.bind(this, i)} /></TableCell>
+			<TableCell>	<TextField type='date' name='DateDone' value={row.DateDone} onChange={this.handleChange.bind(this, i)} /></TableCell>
+			<TableCell><TextareaAutosize name='Comments' value={row.Comments} onChange={this.handleChange.bind(this, i)} /></TableCell>
 			<TableCell>
-				<Select name='status' value={row.status} onChange={this.handleChange.bind(this, i)} style={{ minWidth: 120 }}>
+				<Select name='Status' value={row.Status} onChange={this.handleChange.bind(this, i)} style={{ minWidth: 120 }}>
 					<MenuItem value='red'>Red</MenuItem>
 					<MenuItem value='green'>Green</MenuItem>
 					<MenuItem value='amber'>Amber</MenuItem>
@@ -115,22 +121,13 @@ class App extends React.Component {
 			</TableCell>
 		</TableRow>)
 	}
-	existingDetail() {
-		return this.state.existingDetails.map((row, i) => <TableRow key={i}>
-			<TableCell><TextField type='text' name='gender' value={row.gender} onChange={this.handleChange.bind(this, i)} /></TableCell>
-			<TableCell>
-				{this.state.existingDetails.length === 1 ? '' : <Button variant='contained' onClick={e => this.deleteRow(i)}> <DeleteIcon /></Button>}
-			</TableCell>
-		</TableRow>)
-
-	}
-
+	
 	o3DetailUI() {
 		return this.state.existingDetails.map((row, i) => <TableRow key={i}>
-			<TableCell><label />{row.date}</TableCell>
-			<TableCell>{row.meetingDone ? <label>Yes</label> : <label>No</label>}</TableCell>
-			<TableCell><label />{row.meetingDate}</TableCell>
-			<TableCell><label />{row.comments}</TableCell>
+			<TableCell><label />{row.O3WeekStartDate}</TableCell>
+			<TableCell>{row.O3Done ? <label>Yes</label> : <label>No</label>}</TableCell>
+			<TableCell><label />{row.DateDone}</TableCell>
+			<TableCell><label />{row.Comments}</TableCell>
 			<TableCell >
 				<svg height="50" width="100">
 					<circle cx="50" cy="30" r="10" stroke-width="3" fill="green" />
@@ -144,7 +141,7 @@ class App extends React.Component {
 	}
 
 	render() {
-		const { supervisee } = this.state
+		const { OracleId } = this.state
 		return (
 			<div className='App'>
 				<AppBar position='static'>
@@ -153,7 +150,7 @@ class App extends React.Component {
 					</Toolbar>
 				</AppBar>
 				<Container maxWidth='lg' style={{ marginTop: 16 }}>
-					<Typography variant='h2'>{this.state.supervisee}  O3</Typography>
+					<Typography variant='h2'> O3 Tracker</Typography>
 					<Card variant='outlined'>
 						<CardContent style={{ textAlign: 'left' }}>Choose Supervisee
 							<Button style={{ marginLeft: '91%' }} variant='contained' color='primary' onClick={this.addRow}>
@@ -161,16 +158,11 @@ class App extends React.Component {
 							</Button>
 
 							{/* {this.superviseeDetail} */}
-							<Select name='supervisee' value={supervisee} onChange={this.setSupervisee} style={{ minWidth: 120 }} >
+							<Select name='supervisee' value={OracleId} onChange={this.setSupervisee} style={{ minWidth: 120 }} >
 								{this.state.superviseeList.map((item, i) =>
-									<MenuItem key={item} value={item}>{item}</MenuItem>
+									<MenuItem key={item.OracleId} value={item.OracleId}>{item.EmployeeName}</MenuItem>
 								)}
 							</Select>
-							{/* <Select name='status' value={supervisee} onChange={this.setSupervisee} style={{ minWidth: 120 }}>
-									<MenuItem value='Puneet'>Puneet</MenuItem>
-									<MenuItem value='Depti'>Depti</MenuItem>
-									<MenuItem value='Dheeraj'>Dheeraj</MenuItem>
-							</Select> */}
 						</CardContent>
 						<CardContent style={{ textAlign: 'left' }}>
 							<Table>
@@ -181,7 +173,7 @@ class App extends React.Component {
 										<TableCell>Meeting Date</TableCell>
 										<TableCell>Discussion Comments</TableCell>
 										<TableCell>Status of O3</TableCell>
-										<TableCell>Edit</TableCell>
+										<TableCell>Action</TableCell>
 									</TableRow>
 								</TableHead>
 								<TableBody>
